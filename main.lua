@@ -1,31 +1,22 @@
 lg = love.graphics
 
 function love.load()
-	lineA = {
-		pointA = {x = 20, y = 20},
-		pointB = {x = 550, y = 550}
-	}
+	points = {}
 
-	lineB = {
-		pointA = {x = 500, y = 20},
-		pointB = {x = 600, y = 550}
-	}
+	lineA = {}
+	lineB = {}
+	lineX = {}
 
-	lineX = {
-		pointA = {x = 20, y = 20},
-		pointB = {x = 600, y = 550}
-	}
+	bezier = {}
 
-	bx = 20
-	by = 20
-
-	bezier = {{x = 20, y = 20}}
 	time = 0
 	step = 100
 	c = 0
 end
 
 function love.update(dt)
+	if #points < 4 then return end
+
 	if(c == step) then
 		return
 	else
@@ -36,23 +27,51 @@ function love.update(dt)
 
 			c = c + 1
 
-			lineX.pointA.x = lineX.pointA.x + math.abs(lineA.pointB.x - lineA.pointA.x) / step
-			lineX.pointA.y = lineX.pointA.y + math.abs(lineA.pointB.y - lineA.pointA.y) / step
-
-			lineX.pointB.x = lineX.pointB.x + math.abs(lineB.pointA.x - lineB.pointB.x) / step
-			lineX.pointB.y = lineX.pointB.y - math.abs(lineB.pointB.y - lineB.pointA.y) / step
-
-			if lineX.pointB.y < lineX.pointA.y then
-			    bx = lineX.pointA.x + math.abs(lineX.pointB.x - lineX.pointA.x) / step * c
-				by = lineX.pointA.y - math.abs(lineX.pointB.y - lineX.pointA.y) / step * c
+			if lineB.pointA.x < lineB.pointB.x then
+				lineX.pointB.x = lineX.pointB.x - math.abs(lineB.pointA.x - lineB.pointB.x) / step
 			else
-				bx = lineX.pointA.x + math.abs(lineX.pointB.x - lineX.pointA.x) / step * c
-				by = lineX.pointA.y + math.abs(lineX.pointB.y - lineX.pointA.y) / step * c
+				lineX.pointB.x = lineX.pointB.x + math.abs(lineB.pointA.x - lineB.pointB.x) / step
 			end
 
-			table.insert(bezier, {x = bx, y = by})
+			if lineB.pointA.y < lineB.pointB.y then
+				lineX.pointB.y = lineX.pointB.y - math.abs(lineB.pointA.y - lineB.pointB.y) / step
+			else
+				lineX.pointB.y = lineX.pointB.y + math.abs(lineB.pointA.y - lineB.pointB.y) / step
+			end
+
+			if lineA.pointA.x < lineA.pointB.x then
+				lineX.pointA.x = lineX.pointA.x + math.abs(lineA.pointB.x - lineA.pointA.x) / step
+			else
+				lineX.pointA.x = lineX.pointA.x - math.abs(lineA.pointB.x - lineA.pointA.x) / step
+			end
+
+			if lineA.pointA.y < lineA.pointB.y then
+				lineX.pointA.y = lineX.pointA.y + math.abs(lineA.pointB.y - lineA.pointA.y) / step
+			else
+				lineX.pointA.y = lineX.pointA.y - math.abs(lineA.pointB.y - lineA.pointA.y) / step
+			end
+
+			table.insert(bezier, calcLineX(lineX, true))
 		end
 	end
+end
+
+function calcLineX(line)
+	point = {x = 0, y = 0}
+
+	if lineX.pointA.x < lineX.pointB.x then
+	    point.x = lineX.pointA.x + math.abs(lineX.pointB.x - lineX.pointA.x) / step * c
+	else
+	    point.x = lineX.pointA.x - math.abs(lineX.pointB.x - lineX.pointA.x) / step * c
+	end
+
+	if lineX.pointA.y < lineX.pointB.y then
+		point.y = lineX.pointA.y + math.abs(lineX.pointB.y - lineX.pointA.y) / step * c
+	else
+		point.y = lineX.pointA.y - math.abs(lineX.pointB.y - lineX.pointA.y) / step * c
+	end
+
+	return point
 end
 
 function love.draw()
@@ -61,19 +80,27 @@ function love.draw()
 	drawLine(lineX, true)
 
 	drawBezier()
+
+	lg.print("left mouse click reset\nright mouse click add point", 10, 10)
 end
 
 function drawLine(line, isX)
-	if isX then
-		lg.setColor(255, 0, 0)
+	if #points < 4 then
+		for i = 1, #points do
+			lg.circle("fill", points[i].x, points[i].y, 5)
+		end
+	else
+		if isX then
+			lg.setColor(255, 0, 0)
+		end
+
+		lg.circle("fill", line.pointA.x, line.pointA.y, 5)
+		lg.circle("fill", line.pointB.x, line.pointB.y, 5)
+		
+		lg.line(line.pointA.x, line.pointA.y, line.pointB.x, line.pointB.y)
+
+		lg.setColor(255, 255, 255)
 	end
-
-	lg.circle("fill", line.pointA.x, line.pointA.y, 5)
-	lg.circle("fill", line.pointB.x, line.pointB.y, 5)
-
-	lg.line(line.pointA.x, line.pointA.y, line.pointB.x, line.pointB.y)
-
-	lg.setColor(255, 255, 255)
 end
 
 function drawBezier()
@@ -88,7 +115,31 @@ end
 
  
 function love.mousepressed(x, y, button, istouch)
-   if button == 1 then -- Versions prior to 0.10.0 use the MouseConstant 'l'
-      love.load()
-   end
+	--reset
+	if button == 2 then
+		love.load()
+	elseif button == 1 and #points < 4 then
+		table.insert(points, {x = x, y = y})
+
+		if #points == 4 then
+			lineA = {
+				pointA = {x = points[1].x, y = points[1].y},
+				pointB = {x = points[2].x, y = points[2].y}
+			}
+
+			lineB = {
+				pointA = {x = points[3].x, y = points[3].y},
+				pointB = {x = points[4].x, y = points[4].y}
+			}
+
+			lineX = {
+				pointA = {	x = lineA.pointA.x, 
+							y = lineA.pointA.y},
+				pointB = {	x = lineB.pointB.x, 
+							y = lineB.pointB.y}
+			}
+
+			bezier = {x = points[1].x, y = points[1].y}
+		end
+	end
 end
