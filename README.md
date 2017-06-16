@@ -1,5 +1,5 @@
 # BezierCurve
-Bezier curve creator scripted in LUA
+Simple bezier curve creator between two vectors. Scripted in LUA using Love2D.
 
 ### Usage
 - **right mouse click:** add a point to the screen
