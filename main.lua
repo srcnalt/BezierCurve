@@ -1,6 +1,7 @@
 lg = love.graphics
 
 function love.load()
+	pointCount = 3
 	points = {}
 
 	lineA = {}
@@ -15,7 +16,7 @@ function love.load()
 end
 
 function love.update(dt)
-	if #points < 4 then return end
+	if #points < pointCount then return end
 
 	if(c == step) then
 		return
@@ -85,7 +86,7 @@ function love.draw()
 end
 
 function drawLine(line, isX)
-	if #points < 4 then
+	if #points < pointCount then
 		for i = 1, #points do
 			lg.circle("fill", points[i].x, points[i].y, 5)
 		end
@@ -113,15 +114,14 @@ function drawBezier()
     lg.setColor(255, 255, 255)
 end
 
- 
 function love.mousepressed(x, y, button, istouch)
 	--reset
 	if button == 2 then
 		love.load()
-	elseif button == 1 and #points < 4 then
+	elseif button == 1 and #points < pointCount then
 		table.insert(points, {x = x, y = y})
 
-		if #points == 4 then
+		if #points == pointCount then
 			lineA = {
 				pointA = {x = points[1].x, y = points[1].y},
 				pointB = {x = points[2].x, y = points[2].y}
@@ -129,7 +129,7 @@ function love.mousepressed(x, y, button, istouch)
 
 			lineB = {
 				pointA = {x = points[3].x, y = points[3].y},
-				pointB = {x = points[4].x, y = points[4].y}
+				pointB = {x = points[2].x, y = points[2].y}
 			}
 
 			lineX = {
